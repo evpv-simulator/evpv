@@ -4,13 +4,13 @@
    <img src="docs/logo.jpg" width="100%"> 
 </center>
 
-**The EVPV-simulator (Electric Vehicles - PhotoVoltaics Simulator) model is an open-source Python tool designed to calculate the spatio-temporal charging needs of privately-owned electric vehicles (EVs) and the potential for locally installed solar photovoltaics (PV) to meet these needs. The tool is primarily suited for modeling mobility demand in cities on weekdays, for which it enables the endogenous computation of daily mobility demand by combining georeferenced data with state-of-the-art spatial trip distribution models. For PV generation, it relies on the PVLib toolbox and integrates various PV installation archetypes (e.g., rooftop, free-standing PV, etc.)..**
+**The EVPV-simulator (Electric Vehicles - PhotoVoltaics Simulator) model is an open-source Python tool designed to calculate the spatio-temporal charging needs of privately-owned electric vehicles (EVs) and the potential for solar photovoltaics (PV) to meet these needs in a given region of interest**. Tailored especially for urban contexts with limited mobility data, the simulator enables the endogenous estimation of daily mobility patterns by combining georeferenced datasets with advanced spatial trip distribution models. For PV generation, it leverages the capabilities of the PVLib library and supports a range of installation archetypes (e.g., rooftop, free-standing PV, etc.).
 
 Authors = Jeremy Dumoulin, Alejandro Pena-Bello, Noémie Jeannin, Nicolas Wyrsch
 
 Lead institution = EPFL PV-LAB, Switzerland
 
-Contact = jeremy.dumoulin@epfl.ch 
+Contact = jeremy[dot]dumoulin[at]epfl[dot]ch
 
 Langage = python 3 
 
@@ -61,15 +61,15 @@ $ conda activate evpv-env
 
 2. Install evpv as a python package from the GitHub repository
 ```bash
-$ pip install git+https://github.com/jeremydumoulin/evpv-simulator.git
+$ pip install git+https://github.com/evpv-simulator/evpv.git
 ```
 
 ## Basic Usage
 
 After installation, you can run the **EVPV model in command-line mode**. This is ideal for users who are not familiar with Python or who want to quickly conduct a simple case study.
 
-First, create a configuration file by copying an existing example such as the [Addis Ababa config file](https://github.com/jeremydumoulin/evpv-simulator/tree/main/examples/Basic_AddisAbaba_ConfigFile). Update it with your own input values and ensure that all required geospatial input data is available (see the config file and `input/` folder for guidance).
-> :bulb: We recommend starting by running the Addis Ababa example to get familiar with the workflow. The easiest way to access all necessary files is to download the full GitHub repository as a ZIP file, extract it and copy the contents of the Addis Ababa example folder into the directory of your choice.
+First, create a configuration file by copying an existing example such as the [Addis Ababa config file](https://github.com/evpv-simulator/evpv-examples). Update it with your own input values and ensure that all required geospatial input data is available (see the config file and `input/` folder for guidance).
+> :bulb: We recommend starting by running the Addis Ababa example to get familiar with the workflow. The easiest way to access all necessary files is to download the full GitHub repository with examples as a ZIP file, extract it and copy the contents of the Addis Ababa example folder into the directory of your choice.
 
 > :bulb: Need help in gathering the needed geospatial data for your own case study? See the next section.
 
