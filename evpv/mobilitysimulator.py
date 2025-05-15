@@ -354,7 +354,7 @@ class MobilitySimulator:
 
             # Append values related to the origin (outflows)            
             out_df = flows_df[flows_df['Origin'] == row['id']].copy()
-            out_df['Distance_Flow_Product'] = (out_df['Travel Distance (km)'] + vkt_offset) * out_df['Flow']
+            out_df['Distance_Flow_Product'] = (out_df['Distance road (km)'] + vkt_offset) * out_df['Flow']
 
             outflow_sum = out_df['Flow'].sum()
             distance_flow_product_sum_out = out_df['Distance_Flow_Product'].sum()
@@ -368,7 +368,7 @@ class MobilitySimulator:
 
             # Append values related to the destination (inflows)            
             in_df = flows_df[flows_df['Destination'] == row['id']].copy()
-            in_df['Distance_Flow_Product'] = (in_df['Travel Distance (km)'] + vkt_offset) * in_df['Flow']
+            in_df['Distance_Flow_Product'] = (in_df['Distance road (km)'] + vkt_offset) * in_df['Flow']
 
             inflow_sum = in_df['Flow'].sum()
             distance_flow_product_sum_in = in_df['Distance_Flow_Product'].sum()
@@ -402,8 +402,8 @@ class MobilitySimulator:
             batch_size (int): Number of origins/destinations per ORS request.
 
         Returns:
-            pd.DataFrame: DataFrame containing the flow data with 'Origin', 'Destination', 'Flow', 'Travel Time (min)', 
-                          'Travel Distance (km)', and 'Centroid Distance (km)', with rows where 'Origin' equals 'Destination' removed.
+            pd.DataFrame: DataFrame containing the flow data with 'Origin', 'Destination', 'Flow',  
+                          'Distance road (km)', and 'Distance euclidian (km)', with rows where 'Origin' equals 'Destination' removed.
         """       
         # Extract coordinates of the centroid
         coordinates = [[coord[1], coord[0]] for coord in df['geometric_center']]
@@ -499,9 +499,8 @@ class MobilitySimulator:
             'Origin': origin_ids,
             'Destination': destination_ids,
             'Flow': flows,
-            'Travel Time (min)': travel_times,
-            'Travel Distance (km)': travel_distances, 
-            'Centroid Distance (km)': travel_distances_euclidian
+            'Distance road (km)': travel_distances, 
+            'Distance euclidian (km)': travel_distances_euclidian
         }
 
         flows_df = pd.DataFrame(flow_data)
@@ -535,11 +534,9 @@ class MobilitySimulator:
             raise ValueError(f"ERROR \t Attraction feature is unknown.")
 
         if cost_feature == 'distance_road':
-            cost_list = origin_rows['Travel Distance (km)'].tolist()
-        elif cost_feature == 'time_road':
-            cost_list = origin_rows['Travel Time (min)'].tolist()
-        elif cost_feature == 'distance_centroid':
-            cost_list = origin_rows['Centroid Distance (km)'].tolist()
+            cost_list = origin_rows['Distance road (km)'].tolist()
+        elif cost_feature == 'distance_euclidian':
+            cost_list = origin_rows['Distance euclidian (km)'].tolist()
         else:
             raise ValueError(f"ERROR \t Cost feature is unknown.")
 
@@ -809,9 +806,8 @@ class MobilitySimulator:
             # Group by Origin and Destination and sum the Flow column
             combined_flows = combined_flows.groupby(['Origin', 'Destination'], as_index=False).agg({
                 'Flow': 'sum',  # Sum the Flow column
-                'Travel Time (min)': 'first',  # Keep first or customize as needed
-                'Travel Distance (km)': 'first',  # Keep first or customize as needed
-                'Centroid Distance (km)': 'first'  # Keep first or customize as needed
+                'Distance road (km)': 'first',  # Keep first or customize as needed
+                'Distance euclidian (km)': 'first'  # Keep first or customize as needed
             })
         else:
             ValueError("Run the two simulations before adding two objects.")
@@ -864,9 +860,9 @@ class MobilitySimulator:
             self._aggregated_zone_metrics.at[index, 'n_outflows'] = round(outflows)
 
             # Calculate total kilometers (fkt)
-            total_km_outflows = (self._flows[self._flows['Origin'] == zone_id]['Travel Distance (km)'] *
+            total_km_outflows = (self._flows[self._flows['Origin'] == zone_id]['Distance road (km)'] *
                                  self._flows[self._flows['Origin'] == zone_id]['Flow']).sum()
-            total_km_inflows = (self._flows[self._flows['Destination'] == zone_id]['Travel Distance (km)'] *
+            total_km_inflows = (self._flows[self._flows['Destination'] == zone_id]['Distance road (km)'] *
                                 self._flows[self._flows['Destination'] == zone_id]['Flow']).sum()
 
             # Update total kilometers
@@ -898,8 +894,21 @@ class MobilitySimulator:
         filepath_without_ext, _ = os.path.splitext(filepath)
 
         # Save each dataframe with the respective suffix
-        self._flows.to_csv(f"{filepath_without_ext}_flows.csv")
-        self._aggregated_zone_metrics.to_csv(f"{filepath_without_ext}_aggregated_zone_metrics.csv")
+        self._flows.to_csv(f"{filepath_without_ext}_flows.csv", index=False)
+
+        # Rename columns in the aggregated zone metrics for clarity in the exported CSV
+        renamed_metrics = self._aggregated_zone_metrics.rename(columns={
+            "n_outflows": "Nbr of Outflows",
+            "n_inflows": "Nbr of Inflows",
+            "fkt_outflows": "Fleet Kilometers Out (km)",
+            "fkt_inflows": "Fleet Kilometers In (km)",
+            "vkt_outflows": "Vehicle Kilometers Out (km)",
+            "vkt_inflows": "Vehicle Kilometers In (km)"
+        })
+
+        # Save aggregated zone metrics file
+        renamed_metrics.to_csv(f"{filepath_without_ext}_aggregated_zone_metrics.csv", index=False)
+
 
     def vehicle_allocation_to_map(self, filepath: str):
         df = self.aggregated_zone_metrics

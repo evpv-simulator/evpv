@@ -417,14 +417,29 @@ class ChargingSimulator:
             # Assign origin zone to vehicles 
             origin_flows = self.mobility_demand.flows.groupby("Origin")["Flow"].sum().reset_index()
             zone_probabilities = origin_flows["Flow"] / origin_flows["Flow"].sum()
-            assigned_zones = np.random.choice(origin_flows["Origin"], size=vehicle_counts, p=zone_probabilities)
+            assigned_origins = np.random.choice(origin_flows["Origin"], size=vehicle_counts, p=zone_probabilities)
+
+            # Assign destination
+            assigned_destinations = []
+            for origin in assigned_origins:
+                # Filter rows where Origin matches the current vehicle's origin
+                od_subset = self.mobility_demand.flows[self.mobility_demand.flows["Origin"] == origin]
+
+                # Normalize flows to get destination probabilities
+                probs = od_subset["Flow"] / od_subset["Flow"].sum()
+
+                # Randomly choose a destination for this origin
+                destination = np.random.choice(od_subset["Destination"], p=probs)
+
+                assigned_destinations.append(destination)
             
             # Initialize a DataFrame for vehicle properties
             vehicle_properties = pd.DataFrame({
                 "vehicle_id": np.arange(vehicle_id_counter, vehicle_id_counter + vehicle_counts),  # Unique vehicle IDs
                 "name": np.empty(vehicle_counts, dtype=object),
-                "location": charging_location,
-                "origin_zone": assigned_zones,
+                "charging_location": charging_location,
+                "home_zone": assigned_origins,
+                "work_zone": assigned_destinations,
                 "days_between_charges": np.zeros(vehicle_counts),
                 "charging_demand": np.zeros(vehicle_counts),
                 "arrival_time": np.zeros(vehicle_counts),
@@ -439,14 +454,14 @@ class ChargingSimulator:
 
             # Loop over each zone to calculate zone-specific travel distance distributions
             selected_distances = np.zeros(vehicle_counts)  # Placeholder for distances
-            for zone in np.unique(assigned_zones):
-                zone_indices = np.where(assigned_zones == zone)[0]  # Vehicles in this zone
+            for zone in np.unique(assigned_origins):
+                zone_indices = np.where(assigned_origins == zone)[0]  # Vehicles in this zone
                 zone_demand = self.mobility_demand.flows[self.mobility_demand.flows['Origin'] == zone]
                 
                 # Aggregate flows and calculate distances and probabilities for this zone
-                grouped_zone_demand = zone_demand.groupby('Travel Distance (km)')['Flow'].sum().reset_index()
+                grouped_zone_demand = zone_demand.groupby('Distance road (km)')['Flow'].sum().reset_index()
                 grouped_zone_demand['Probability'] = grouped_zone_demand['Flow'] / grouped_zone_demand['Flow'].sum()
-                distances = grouped_zone_demand['Travel Distance (km)'].values
+                distances = grouped_zone_demand['Distance road (km)'].values
                 probabilities = grouped_zone_demand['Probability'].values
                 
                 # Assign travel distances for vehicles in this zone
@@ -623,7 +638,7 @@ class ChargingSimulator:
         """
         Creates an aggregated charging profile, summing the charging power of all vehicles 
         across different locations (home, work, poi) for each time step. It also includes 
-        statistics on the number of vehicles plugged in and charging at each location.
+        statistics on the number of vehicles present and charging at each location.
 
         Parameters:
             time_step (float): The time step interval (in hours) for which the aggregated charging profile is computed.
@@ -634,7 +649,7 @@ class ChargingSimulator:
         print("INFO \t Computing the aggregated charging profile by location...")
 
         # Get the individual charging profile and vehicle properties DataFrames
-        vehicle_properties = self.temporal_demand_vehicle_properties  # contains 'vehicle_id', 'arrival_time', 'departure_time', 'location'
+        vehicle_properties = self.temporal_demand_vehicle_properties  # contains 'vehicle_id', 'arrival_time', 'departure_time', 'charging_location'
         charging_profile = self.temporal_demand_profile               # contains 'vehicle_id', 'time', and power data
 
         # Convert time columns to float (if not already)
@@ -647,7 +662,7 @@ class ChargingSimulator:
         melted_profile['vehicle_id'] = melted_profile['vehicle_id'].astype(int)
 
         # Merge with vehicle properties to associate each vehicle's charging with its location
-        merged_df = melted_profile.merge(vehicle_properties[['vehicle_id', 'location', 'arrival_time', 'departure_time']], on='vehicle_id')
+        merged_df = melted_profile.merge(vehicle_properties[['vehicle_id', 'charging_location', 'arrival_time', 'departure_time']], on='vehicle_id')
 
         # Vectorized determination of whether each vehicle is plugged in based on arrival and departure times
         arrival_time = merged_df['arrival_time']
@@ -659,7 +674,7 @@ class ChargingSimulator:
 
         # Aggregate charging power by time and location
         aggregated_profile = (merged_df
-                              .groupby(['time', 'location'])['charging_power']
+                              .groupby(['time', 'charging_location'])['charging_power']
                               .sum()
                               .unstack(fill_value=0)
                               .reset_index()
@@ -675,7 +690,7 @@ class ChargingSimulator:
 
         # Count the number of vehicles charging (non-zero power) by location and time
         vehicle_charging_counts = (merged_df[merged_df['charging_power'] > 0]
-                                   .groupby(['time', 'location'])['vehicle_id']
+                                   .groupby(['time', 'charging_location'])['vehicle_id']
                                    .nunique()
                                    .unstack(fill_value=0)
                                    .reset_index())
@@ -697,7 +712,7 @@ class ChargingSimulator:
 
         # Count the number of vehicles plugged in (regardless of charging status) by location and time
         vehicle_plugged_counts = (merged_df[merged_df['is_plugged']]
-                                  .groupby(['time', 'location'])['vehicle_id']
+                                  .groupby(['time', 'charging_location'])['vehicle_id']
                                   .nunique()
                                   .unstack(fill_value=0)
                                   .reset_index())
@@ -708,22 +723,22 @@ class ChargingSimulator:
                 vehicle_plugged_counts[col] = 0
 
         # Rename columns to indicate they are counts of plugged-in vehicles
-        vehicle_plugged_counts = vehicle_plugged_counts.rename(columns={'home': 'home_vehicle_plugged',
-                                                                        'work': 'work_vehicle_plugged',
-                                                                        'poi': 'poi_vehicle_plugged'})
+        vehicle_plugged_counts = vehicle_plugged_counts.rename(columns={'home': 'home_vehicle_present',
+                                                                        'work': 'work_vehicle_present',
+                                                                        'poi': 'poi_vehicle_present'})
         
         # Add a total plugged-in vehicle count column
-        vehicle_plugged_counts['total_vehicle_plugged'] = vehicle_plugged_counts[['home_vehicle_plugged', 
-                                                                                  'work_vehicle_plugged', 
-                                                                                  'poi_vehicle_plugged']].sum(axis=1)
+        vehicle_plugged_counts['total_vehicle_present'] = vehicle_plugged_counts[['home_vehicle_present', 
+                                                                                  'work_vehicle_present', 
+                                                                                  'poi_vehicle_present']].sum(axis=1)
 
         # Merge the counts back into the aggregated profile
         aggregated_profile = aggregated_profile.merge(vehicle_charging_counts, on='time', how='left').fillna(0)
         aggregated_profile = aggregated_profile.merge(vehicle_plugged_counts, on='time', how='left').fillna(0)
 
         self._temporal_demand_profile_aggregated = aggregated_profile[['time', 'home', 'work', 'poi', 'total',
-                                                                       'home_vehicle_plugged', 'work_vehicle_plugged', 
-                                                                       'poi_vehicle_plugged', 'total_vehicle_plugged',
+                                                                       'home_vehicle_present', 'work_vehicle_present', 
+                                                                       'poi_vehicle_present', 'total_vehicle_present',
                                                                        'home_vehicle_charging', 'work_vehicle_charging', 
                                                                        'poi_vehicle_charging', 'total_vehicle_charging']]
 
@@ -764,7 +779,7 @@ class ChargingSimulator:
         # Iterate through each specified location
         for l in location:
             # Filter vehicles by the current location
-            location_vehicles = self._temporal_demand_vehicle_properties[self._temporal_demand_vehicle_properties['location'] == l]
+            location_vehicles = self._temporal_demand_vehicle_properties[self._temporal_demand_vehicle_properties['charging_location'] == l]
             
             # Determine the number of vehicles to modify for the current location
             num_smart_vehicles = int(share * len(location_vehicles))
@@ -919,10 +934,30 @@ class ChargingSimulator:
         filepath_without_ext, _ = os.path.splitext(filepath)
 
         # Save each dataframe with the respective suffix
-        self._spatial_demand.to_csv(f"{filepath_without_ext}_spatial_demand.csv")
-        self._temporal_demand_vehicle_properties.to_csv(f"{filepath_without_ext}_temporal_demand_vehicle_properties.csv")
-        self._temporal_demand_profile.to_csv(f"{filepath_without_ext}_temporal_demand_profile.csv")
-        self._temporal_demand_profile_aggregated.to_csv(f"{filepath_without_ext}_temporal_demand_profile_aggregated.csv")
+        self._spatial_demand.to_csv(f"{filepath_without_ext}_spatial_demand.csv", index=False)
+        self._temporal_demand_vehicle_properties.to_csv(f"{filepath_without_ext}_temporal_demand_vehicle_properties.csv", index=False)
+        self._temporal_demand_profile.to_csv(f"{filepath_without_ext}_temporal_demand_profile.csv", index=False)
+
+        aggregated_profile = self._temporal_demand_profile_aggregated[
+            ['time', 'home', 'work', 'poi', 'total',
+             'home_vehicle_present', 'work_vehicle_present', 'poi_vehicle_present', 'total_vehicle_present',
+             'home_vehicle_charging', 'work_vehicle_charging', 'poi_vehicle_charging', 'total_vehicle_charging']
+        ].rename(columns={
+            'time': 'Time (h)',
+            'home': 'Load - Home (kW)',
+            'work': 'Load - Work (kW)',
+            'poi': 'Load - POI (kW)',
+            'total': 'Load - Total (kW)',
+            'home_vehicle_present': 'Vehicles Present - Home',
+            'work_vehicle_present': 'Vehicles Present - Work',
+            'poi_vehicle_present': 'Vehicles Present - POI',
+            'total_vehicle_present': 'Vehicles Present - Total',
+            'home_vehicle_charging': 'Vehicles Charging - Home',
+            'work_vehicle_charging': 'Vehicles Charging - Work',
+            'poi_vehicle_charging': 'Vehicles Charging - POI',
+            'total_vehicle_charging': 'Vehicles Charging - Total'
+        })
+        aggregated_profile.to_csv(f"{filepath_without_ext}_temporal_demand_profile_aggregated.csv", index=False)
 
     def chargingdemand_total_to_map(self, filepath: str):
         """
