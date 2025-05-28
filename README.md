@@ -14,7 +14,8 @@ Contact = jeremy[dot]dumoulin[at]epfl[dot]ch
 
 Langage = python 3 
 
-> :bulb: This `README.md` provides a quick start guide for basic usage of the evpv-simulator model. Comprehensive documentation for detailed and advanced usage will soon be available on a [Read the Docs](https://readthedocs.org/) page. 
+> **Comprehensive documentation** is available on [Read the Docs](https://evpv-simulator.readthedocs.io/en/latest/).
+> **Examples and related tools** can be found on the [GitHub organization](https://github.com/evpv-simulator) of the project.
 
 ## Table of Contents
 
