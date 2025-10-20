@@ -186,9 +186,10 @@ All the classes are located in the `evpv/` folder, as shown in the project struc
 ### Planned features
 
 - Adding more examples
-- Create a readthedocs
 - Make a contributing guide
-- Write some unit tests 
+- Write some unit tests
+- Add weekends
+- Add more "smart charging" strategies, such as PV-aligned charging
 
 ## Scientific publications
 [1] Jérémy Dumoulin et al. 2025. A modeling framework to support the electrification of private transport in African cities: A case study of Addis Ababa. African Transportation Research, 100064. [https://doi.org/10.1016/j.aftran.2025.100064](https://doi.org/10.1016/j.aftran.2025.100064). 
@@ -199,4 +200,5 @@ This project was supported by the HORIZON [OpenMod4Africa](https://openmod4afric
 ## License
 
 [GNU GENERAL PUBLIC LICENSE](https://www.gnu.org/licenses/gpl-3.0.html)
+
 
