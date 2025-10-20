@@ -191,7 +191,7 @@ All the classes are located in the `evpv/` folder, as shown in the project struc
 - Write some unit tests 
 
 ## Scientific publications
-[1] Jérémy Dumoulin et al. A modeling framework to support the electrification of private transport in African cities: a case study of Addis Ababa. arXiv preprint arXiv:2503.03671, 2025. [https://doi.org/10.48550/arXiv.2503.03671](https://doi.org/10.48550/arXiv.2503.03671). 
+[1] Jérémy Dumoulin et al. 2025. A modeling framework to support the electrification of private transport in African cities: A case study of Addis Ababa. African Transportation Research, 100064. [https://doi.org/10.1016/j.aftran.2025.100064](https://doi.org/10.1016/j.aftran.2025.100064). 
 
 ## Acknowledgment 
 This project was supported by the HORIZON [OpenMod4Africa](https://openmod4africa.eu/) project (Grant number 101118123), with funding from the European Union and the State Secretariat for Education, Research and Innovation (SERI) for the Swiss partners. We also gratefully acknowledge the support of OpenMod4Africa partners for their contributions and collaboration.
@@ -199,3 +199,4 @@ This project was supported by the HORIZON [OpenMod4Africa](https://openmod4afric
 ## License
 
 [GNU GENERAL PUBLIC LICENSE](https://www.gnu.org/licenses/gpl-3.0.html)
+
