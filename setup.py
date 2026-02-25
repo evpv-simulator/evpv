@@ -1,9 +1,8 @@
 from setuptools import setup, find_packages
-from version import __version__
 
 setup(
     name="evpv",          
-    version=__version__,                  
+    version=1.1,                  
     description="A modelling tool to calculate the spatio-temporal charging needs of electric vehicles and the potential for solar-based charging",
     packages=find_packages(),
     long_description="README.md",
