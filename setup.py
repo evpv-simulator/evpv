@@ -1,10 +1,11 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 from version import __version__
 
 setup(
     name="evpv",          
     version=__version__,                  
     description="A modelling tool to calculate the spatio-temporal charging needs of electric vehicles and the potential for solar-based charging",
+    packages=find_packages(),
     long_description="README.md",
     long_description_content_type="text/markdown",
     author="Jérémy Dumoulin",
